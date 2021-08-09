@@ -17,7 +17,7 @@ time_t getNtpTime() {
   // wait to see if a reply is available
   delay(1000);
   if (Udp.parsePacket()) {
-    Serial.println("packet received");
+    Serial1.println("packet received");
     // We've received a packet, read the data from it
     Udp.read(packetBuffer, NTP_PACKET_SIZE); // read the packet into the buffer
 
@@ -29,17 +29,17 @@ time_t getNtpTime() {
     // combine the four bytes (two words) into a long integer
     // this is NTP time (seconds since Jan 1 1900):
     unsigned long secsSince1900 = highWord << 16 | lowWord;
-    Serial.print("Seconds since Jan 1 1900 = ");
-    Serial.println(secsSince1900);
+    Serial1.print("Seconds since Jan 1 1900 = ");
+    Serial1.println(secsSince1900);
 
     // now convert NTP time into everyday time:
-    Serial.print("Unix time = ");
+    Serial1.print("Unix time = ");
     // Unix time starts on Jan 1 1970. In seconds, that's 2208988800:
     const unsigned long seventyYears = 2208988800UL;
     // subtract seventy years:
     unsigned long epoch = secsSince1900 - seventyYears;
     // print Unix time:
-    Serial.println(epoch);
+    Serial1.println(epoch);
     return epoch;
   }
   return 0;
@@ -47,12 +47,12 @@ time_t getNtpTime() {
 
 // send an NTP request to the time server at the given address
 unsigned long sendNTPpacket(IPAddress& address) {
-  //Serial.println("1");
+  //Serial1.println("1");
   // set all bytes in the buffer to 0
   memset(packetBuffer, 0, NTP_PACKET_SIZE);
   // Initialize values needed to form NTP request
   // (see URL above for details on the packets)
-  //Serial.println("2");
+  //Serial1.println("2");
   packetBuffer[0] = 0b11100011;   // LI, Version, Mode
   packetBuffer[1] = 0;     // Stratum, or type of clock
   packetBuffer[2] = 6;     // Polling Interval
@@ -63,19 +63,19 @@ unsigned long sendNTPpacket(IPAddress& address) {
   packetBuffer[14]  = 49;
   packetBuffer[15]  = 52;
 
-  //Serial.println("3");
+  //Serial1.println("3");
 
   // all NTP fields have been given values, now
   // you can send a packet requesting a timestamp:
   Udp.beginPacket(address, 123); //NTP requests are to port 123
-  //Serial.println("4");
+  //Serial1.println("4");
   Udp.write(packetBuffer, NTP_PACKET_SIZE);
-  //Serial.println("5");
+  //Serial1.println("5");
   Udp.endPacket();
-  //Serial.println("6");
+  //Serial1.println("6");
 }
 
 void ntpBegin(void) {
-  Serial.println("\nStarting connection to server...");
+  Serial1.println("\nStarting connection to server...");
   Udp.begin(localPort);
 }

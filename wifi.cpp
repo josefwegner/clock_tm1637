@@ -10,20 +10,20 @@ int keyIndex = 0;            // your network key index number (needed only for W
 void wifiBegin(void) {
   // check for the WiFi module:
   if (WiFi.status() == WL_NO_MODULE) {
-    Serial.println("Communication with WiFi module failed!");
+    Serial1.println("Communication with WiFi module failed!");
     // don't continue
     while (true);
   }
 
   String fv = WiFi.firmwareVersion();
   if (fv < WIFI_FIRMWARE_LATEST_VERSION) {
-    Serial.println("Please upgrade the firmware");
+    Serial1.println("Please upgrade the firmware");
   }
 
   // attempt to connect to WiFi network:
   while (status != WL_CONNECTED) {
-    Serial.print("Attempting to connect to SSID: ");
-    Serial.println(ssid);
+    Serial1.print("Attempting to connect to SSID: ");
+    Serial1.println(ssid);
     // Connect to WPA/WPA2 network. Change this line if using open or WEP network:
     status = WiFi.begin(ssid, pass);
 
@@ -31,23 +31,23 @@ void wifiBegin(void) {
     delay(10000);
   }
 
-  Serial.println("Connected to WiFi");
+  Serial1.println("Connected to WiFi");
   printWifiStatus();
 }
 
 void printWifiStatus(void) {
   // print the SSID of the network you're attached to:
-  Serial.print("SSID: ");
-  Serial.println(WiFi.SSID());
+  Serial1.print("SSID: ");
+  Serial1.println(WiFi.SSID());
 
   // print your board's IP address:
   IPAddress ip = WiFi.localIP();
-  Serial.print("IP Address: ");
-  Serial.println(ip);
+  Serial1.print("IP Address: ");
+  Serial1.println(ip);
 
   // print the received signal strength:
   long rssi = WiFi.RSSI();
-  Serial.print("signal strength (RSSI):");
-  Serial.print(rssi);
-  Serial.println(" dBm");
+  Serial1.print("signal strength (RSSI):");
+  Serial1.print(rssi);
+  Serial1.println(" dBm");
 }
