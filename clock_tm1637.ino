@@ -14,20 +14,21 @@
  This code is in the public domain.
 
  */
-
+#ifdef __cplusplus
 extern "C"
 {
   void rtc_init           (void);
   bool rtc_get_datetime(datetime_t *t);
   bool rtc_set_datetime(datetime_t *t);
 }
+#endif
 
 #include <TM1637Display.h>
 #include <mbed.h>
-#include "hardware/rtc.h"
+#include <hardware/rtc.h>
 #include "ntp.hh"
 #include "wifi.hh"
-#include "convertEpoch.h"
+#include "convert_time.h"
 
 using namespace std::chrono;
 mbed::Ticker displayTicker;
@@ -63,7 +64,7 @@ void loop() {
   datetime_t currTime;
   time_t epoch = getNtpTime();
   if (epoch > 0) {
-    convertEpoch(epoch, &currTime);
+    convertEpochLocal(epoch, &currTime);
     if (!rtc_set_datetime(&currTime)) {
       Serial1.println("Error while setting rtc");
     }
