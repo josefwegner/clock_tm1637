@@ -26,6 +26,8 @@ extern "C"
   void convertEpochLocal(const time_t epoch, datetime_t *datetime);
 
   unsigned int dayofweek(unsigned y, unsigned int m, unsigned int d);
+
+  void addOffset(datetime_t *datetime);
 #ifdef __cplusplus
 }
 #endif

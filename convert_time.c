@@ -12,24 +12,72 @@ void convertEpochLocal(const time_t epoch, datetime_t *datetime) {
   if (datetime->month == 3 || datetime->month == 10) {
     // difficult case, need to calculate exact start and end date
     // of daylight savings time
-    // calculate day of the week for April 1st
-
+    // calculate day of the week for April 1st and November 1st
+    int lastSundayOfMarch = 31 - ((dayofweek(datetime->year, 4, 1) + 6) % 7);
+    int lastSundayOfOctober = 31 - dayofweek(datetime->year, 10, 31);
+#ifdef STANDALONE
+    printf("day of the week April 1st: %d, day of the week October 31st: %d\n", dayofweek(datetime->year, 4, 1), dayofweek(datetime->year, 10, 31));
+    printf("lastSundayOfMarch: %d, lastSundayOfOctober: %d\n", lastSundayOfMarch, lastSundayOfOctober);
+#endif
+    if (datetime->month == 3) {
+      if (datetime->day == lastSundayOfMarch) {
+        // complicate case, compare hours
+        if (datetime->hour >= 2) {
+          addOffset(datetime);
+        }
+      } else if (datetime->day > lastSundayOfMarch) {
+        // add another hour
+        addOffset(datetime);
+      } else {
+        // still default time
+      }
+    } else if (datetime->month == 10) {
+      if (datetime->day == lastSundayOfOctober) {
+        // complicate case, compare hours
+        if (datetime->hour < 3) {
+          addOffset(datetime);
+#ifdef STANDALONE
+          printf("still summer time in October after checking hour; day = %d, hour = %d\n", datetime->day, datetime->hour);
+#endif
+        } else {
+          // again default time
+#ifdef STANDALONE
+          printf("again default time in October after checking hour; day = %d, hour = %d\n", datetime->day, datetime->hour);
+#endif
+        }
+      } else if (datetime->day < lastSundayOfOctober) {
+        // add another hour
+        addOffset(datetime);
+#ifdef STANDALONE
+        printf("still summer time in October; day = %d\n", datetime->day);
+#endif
+      } else {
+        // again default time
+#ifdef STANDALONE
+        printf("again default time in October; day = %d\n", datetime->day);
+#endif
+      }
+    }
   } else if (datetime->month > 3 && datetime->month < 10) {
     // daylights saving time - add another hour
-    datetime->hour++;
-    if (datetime->hour > 23) {
-      datetime->hour -= 24;
-      datetime->day++; datetime->dotw = (datetime->dotw + 1) % 7;
-      if (datetime->day > 30) {
-        // check if we need to increase the month
-        if (datetime->month == 4 || datetime->month == 6 || datetime->month == 9) {
-          datetime->day -= 30;
+    addOffset(datetime);
+  }
+}
+
+void addOffset(datetime_t *datetime) {
+  datetime->hour++;
+  if (datetime->hour > 23) {
+    datetime->hour -= 24;
+    datetime->day++; datetime->dotw = (datetime->dotw + 1) % 7;
+    if (datetime->day > 30) {
+      // check if we need to increase the month
+      if (datetime->month == 4 || datetime->month == 6 || datetime->month == 9) {
+        datetime->day -= 30;
+        datetime->month++;
+      } else {
+        if (datetime->day > 31) {
+          datetime->day -= 31;
           datetime->month++;
-        } else {
-          if (datetime->day > 31) {
-            datetime->day -= 31;
-            datetime->month++;
-          }
         }
       }
     }
@@ -37,6 +85,9 @@ void convertEpochLocal(const time_t epoch, datetime_t *datetime) {
 }
 
 void convertEpochUTC(const time_t epoch, datetime_t *datetime) {
+  static unsigned int daysInMonth[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+  static unsigned int daysInMonthLeapyear[] = {31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+
   unsigned long tmp = epoch;
   datetime->sec = tmp % 60; tmp /= 60;
   datetime->min = tmp % 60; tmp /= 60;
@@ -71,22 +122,21 @@ void convertEpochUTC(const time_t epoch, datetime_t *datetime) {
 
   leapyear = year % 4 == 0 && (year % 100 != 0 || year % 400 == 0);
 
-  while (tmp >= 28) {
+  unsigned int *days = daysInMonth;
+  if (leapyear) {
+    days = daysInMonthLeapyear;
+  }
+
+  while (tmp >= days[month - 1]) {
 #ifdef STANDALONE
     printf("year: %d, month: %d, is leap year?: %d, tmp: %ld\n", year, month, leapyear, tmp);
 #endif
-    if (month == 2) {
-      if (leapyear) {
-        tmp--;
-      }
-    } else if (month == 1 || month == 3 || month == 5 || month == 7 || month == 8 || month == 10 || month == 12) {
-      tmp -= 3;
-    } else {
-      tmp -= 2;
-    }
-    tmp -= 28;
+    tmp -= days[month - 1];
     month++;
   }
+#ifdef STANDALONE
+    printf(" year: %d, month: %d, is leap year?: %d, tmp: %ld\n", year, month, leapyear, tmp);
+#endif
   datetime->year = year;
   datetime->month = month;
   datetime->day = tmp + 1;
@@ -111,6 +161,15 @@ int main(void) {
   printf("current: %04ld-%02d-%02d (%s) %02d:%02d:%02d\n\n", tm.year, tm.month, tm.day, days[tm.dotw], tm.hour, tm.min, tm.sec);
 
   // some tests
+  convertEpochLocal(0L, &tm);
+  printf("returned: %04ld-%02d-%02d (%s) %02d:%02d:%02d\n", tm.year, tm.month, tm.day, days[tm.dotw], tm.hour, tm.min, tm.sec);
+  printf("expected: 1970-01-01 (Thu) 01:00:00\n\n");
+
+  // some tests
+  convertEpochLocal(26179200L, &tm);
+  printf("returned: %04ld-%02d-%02d (%s) %02d:%02d:%02d\n", tm.year, tm.month, tm.day, days[tm.dotw], tm.hour, tm.min, tm.sec);
+  printf("expected: 1970-10-31 (Sat) 01:00:00\n\n");
+
   convertEpochLocal(1630452461L, &tm);
   printf("returned: %04ld-%02d-%02d (%s) %02d:%02d:%02d\n", tm.year, tm.month, tm.day, days[tm.dotw], tm.hour, tm.min, tm.sec);
   printf("expected: 2021-09-01 (Wed) 01:27:41\n\n");
@@ -126,6 +185,30 @@ int main(void) {
   convertEpochLocal(1583018861L, &tm);
   printf("returned: %04ld-%02d-%02d (%s) %02d:%02d:%02d\n", tm.year, tm.month, tm.day, days[tm.dotw], tm.hour, tm.min, tm.sec);
   printf("expected: 2020-03-01 (Sun) 00:27:41\n\n");
+
+  convertEpochLocal(1616865701L, &tm);
+  printf("returned: %04ld-%02d-%02d (%s) %02d:%02d:%02d\n", tm.year, tm.month, tm.day, days[tm.dotw], tm.hour, tm.min, tm.sec);
+  printf("expected: 2021-03-27 (Sat) 18:21:41\n\n");
+
+  convertEpochLocal(1616890901L, &tm);
+  printf("returned: %04ld-%02d-%02d (%s) %02d:%02d:%02d\n", tm.year, tm.month, tm.day, days[tm.dotw], tm.hour, tm.min, tm.sec);
+  printf("expected: 2021-03-28 (Sun) 01:21:41\n\n");
+
+  convertEpochLocal(1616894501L, &tm);
+  printf("returned: %04ld-%02d-%02d (%s) %02d:%02d:%02d\n", tm.year, tm.month, tm.day, days[tm.dotw], tm.hour, tm.min, tm.sec);
+  printf("expected: 2021-03-28 (Sun) 03:21:41\n\n");
+
+  convertEpochLocal(1635646901L, &tm);
+  printf("returned: %04ld-%02d-%02d (%s) %02d:%02d:%02d\n", tm.year, tm.month, tm.day, days[tm.dotw], tm.hour, tm.min, tm.sec);
+  printf("expected: 2021-10-31 (Sun) 03:21:41\n\n");
+
+  convertEpochLocal(1635639701L, &tm);
+  printf("returned: %04ld-%02d-%02d (%s) %02d:%02d:%02d\n", tm.year, tm.month, tm.day, days[tm.dotw], tm.hour, tm.min, tm.sec);
+  printf("expected: 2021-10-31 (Sun) 02:21:41\n\n");
+
+  convertEpochLocal(1603498901L, &tm);
+  printf("returned: %04ld-%02d-%02d (%s) %02d:%02d:%02d\n", tm.year, tm.month, tm.day, days[tm.dotw], tm.hour, tm.min, tm.sec);
+  printf("expected: 2020-10-24 (Sat) 02:21:41\n\n");
 }
 #endif
 
