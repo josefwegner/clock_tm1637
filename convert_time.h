@@ -25,9 +25,15 @@ extern "C"
 
   void convertEpochLocal(const time_t epoch, datetime_t *datetime);
 
+  void convertToLocalTime(datetime_t *datetime);
+
   unsigned int dayofweek(unsigned y, unsigned int m, unsigned int d);
 
   void addOffset(datetime_t *datetime);
+
+  inline int isLeapYear(const unsigned int year);
+
+  int isDayLightSavingTime(const datetime_t *datetime);
 #ifdef __cplusplus
 }
 #endif

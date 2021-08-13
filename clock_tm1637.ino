@@ -64,7 +64,7 @@ void loop() {
   datetime_t currTime;
   time_t epoch = getNtpTime();
   if (epoch > 0) {
-    convertEpochLocal(epoch, &currTime);
+    convertEpochUTC(epoch, &currTime);
     if (!rtc_set_datetime(&currTime)) {
       Serial1.println("Error while setting rtc");
     }
@@ -75,6 +75,7 @@ void loop() {
 void displayTickerFunc(void) {
   datetime_t currTime;
   if (rtc_get_datetime(&currTime)) {
+    convertToLocalTime(&currTime);
     tm1637.showNumberDecEx(currTime.hour * 100 + currTime.min, (currTime.sec % 2) << 6, true);
   }
 }
