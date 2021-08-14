@@ -13,6 +13,10 @@ the following shortcomings:
 - it does not handle leap seconds
 - timezone handling is hard coded for CET and CEST
 - it is not particular optimized nor pretty
+## Dependencies
+The sketch needs following libraries to be installed:
+- WiFiNINA (https://github.com/arduino-libraries/WiFiNINA)
+- TM1637 (https://github.com/avishorp/TM1637)
 
 ## Wiring
 | Nano RP2040 Connect | TM1637 Display |
