@@ -1,19 +1,27 @@
 /*
- Udp NTP Client
+ Simple Digital Clock Sketch for Arduino Nano RP2040 Connect
 
- Get the time from a Network Time Protocol (NTP) time server
- Demonstrates use of UDP sendPacket and ReceivePacket
- For more on NTP time servers and the messages needed to communicate with them,
- see http://en.wikipedia.org/wiki/Network_Time_Protocol
+ This sketchs shows the current local time on a 4-digit LED display with a
+ TM1637 driver IC.
 
+ WiFi and NTP code
  created 4 Sep 2010
  by Michael Margolis
  modified 9 Apr 2012
  by Tom Igoe
 
- This code is in the public domain.
+ dayofweek code
+ by Tomohiko Sakamoto
 
+ other code
+ created 5 Aug 2021
+ by Josef Wegner
+
+ This code is in the public domain.
  */
+
+// workaround for missing extern "C" in pico-sdk 1.0 used by
+// ArduinoCore-mbed (https://github.com/arduino/ArduinoCore-mbed/issues/300)
 #ifdef __cplusplus
 extern "C"
 {
@@ -41,9 +49,6 @@ TM1637Display tm1637(2, 3);
 void setup() {
   // Open serial communications and wait for port to open:
   Serial1.begin(9600);
-  //while (!Serial1) {
-  //  ; // wait for serial port to connect. Needed for native USB port only
-  //}
 
   Serial1.println("Init display");
   tm1637.setBrightness(5);

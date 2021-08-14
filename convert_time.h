@@ -1,3 +1,14 @@
+/*
+ Epoch -> datetime_t conversion
+
+ dayofweek code by Tomohiko Sakamoto
+
+ created 5 Aug 2021
+ by Josef Wegner
+
+ This code is in the public domain.
+ */
+
 #ifndef CONVERTEPOCH_H
 #define CONVERTEPOCH_H
 

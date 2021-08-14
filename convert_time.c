@@ -1,3 +1,15 @@
+/*
+ Epoch -> datetime_t conversion
+
+ dayofweek code
+ by Tomohiko Sakamoto
+
+ other code
+ created 5 Aug 2021
+ by Josef Wegner
+
+ This code is in the public domain.
+ */
 #include "convert_time.h"
 
 #ifdef STANDALONE
