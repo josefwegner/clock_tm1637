@@ -1,2 +1,3 @@
 convert_time
-.vscode
+arduino_secrets.h
+.vscode/
