@@ -33,7 +33,6 @@ extern "C"
 
 #include <TM1637Display.h>
 #include <mbed.h>
-#include <hardware/rtc.h>
 #include "ntp.hh"
 #include "wifi.hh"
 #include "convert_time.h"
