@@ -16,15 +16,23 @@ the following shortcomings:
 ## Dependencies
 The sketch needs following libraries to be installed:
 - WiFiNINA (https://github.com/arduino-libraries/WiFiNINA)
-- TM1637 (https://github.com/avishorp/TM1637)
+- TM1637 Driver (https://github.com/AKJ7/TM1637)
+- RotaryEncoder (https://github.com/mathertel/RotaryEncoder)
 
 ## Wiring
-| Nano RP2040 Connect | TM1637 Display |
-|---------------------|----------------|
-| D2                  | CLK            |
-| D3                  | DIO            |
-| +3V3V               | VCC            |
-| GND                 | GND            |
+| Nano RP2040 Connect | TM1637 Display | Rotary Encoder |
+|---------------------|----------------|----------------|
+| D2                  | CLK            |                |
+| D3                  | DIO            |                |
+| D3                  |                | A / CLK        |
+| D4                  |                | B / DI         |
+| D5                  |                | T              |
+| +3V3V               | VCC            | (VCC)          |
+| GND                 | GND            | GND            |
+
+Depending on the rotary encoder, you might need 10k resistors
+as pull-ups. This is the case if the rotary encoder has no
+VCC input.
 
 ## WiFi Authentication
 Create a file called arduino_secrets.h with the following contents:
