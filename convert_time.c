@@ -1,19 +1,20 @@
 /*
- Epoch -> datetime_t conversion
+   Epoch -> datetime_t conversion
 
- dayofweek code
- by Tomohiko Sakamoto
+   dayofweek code
+   by Tomohiko Sakamoto
 
- other code
- created 5 Aug 2021
- by Josef Wegner
+   other code
+   created 5 Aug 2021
+   by Josef Wegner
 
- This code is in the public domain.
- */
+   This code is in the public domain.
+   */
 #include "convert_time.h"
 
 #ifdef STANDALONE
 #include <stdio.h>
+#include <string.h>
 char* weekday[] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
 #endif
 
@@ -22,16 +23,16 @@ static unsigned int days[2][12] = {
   {31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31}  // leap year
 };
 
-void convertEpochLocal(const time_t epoch, datetime_t *datetime) {
+void epoch_to_local(const time_t epoch, datetime_t *datetime) {
   // CEST starts last Sunday in March, ends last Sunday in October
   // okay, we are in Germany, so at least add one hour
-  convertEpochUTC(epoch + 3600, datetime);
-  if (isDayLightSavingTime(datetime)) {
-      addOffset(datetime);
+  epoch_to_utc(epoch + 3600, datetime);
+  if (is_dst(datetime)) {
+    add_offset(datetime);
   }
 }
 
-int isDayLightSavingTime(const datetime_t *datetime) {
+int is_dst(const datetime_t *datetime) {
   // easy cases - always normal time
   if (datetime->month < 3 || datetime->month > 10) {
     return 0;
@@ -88,13 +89,13 @@ int isDayLightSavingTime(const datetime_t *datetime) {
   }
 }
 
-void addOffset(datetime_t *datetime) {
+void add_offset(datetime_t *datetime) {
   datetime->hour++;
   if (datetime->hour > 23) {
     datetime->hour = 0;
     datetime->day++;
     datetime->dotw = (datetime->dotw + 1) % 7;
-    if (datetime->day > days[isLeapYear(datetime->year)][datetime->month - 1]) {
+    if (datetime->day > days[is_leapyear(datetime->year)][datetime->month - 1]) {
       datetime->day = 1;
       datetime->month++;
       if (datetime->month > 12) {
@@ -105,11 +106,11 @@ void addOffset(datetime_t *datetime) {
   }
 }
 
-int isLeapYear(const unsigned int year) {
+int is_leapyear(const unsigned int year) {
   return year % 4 == 0 && (year % 100 != 0 || year % 400 == 0);
 }
 
-void convertEpochUTC(const time_t epoch, datetime_t *datetime) {
+void epoch_to_utc(const time_t epoch, datetime_t *datetime) {
   unsigned long tmp = epoch;
   datetime->sec = tmp % 60; tmp /= 60;
   datetime->min = tmp % 60; tmp /= 60;
@@ -142,7 +143,7 @@ void convertEpochUTC(const time_t epoch, datetime_t *datetime) {
     year++;
   }
 
-  leapyear = isLeapYear(year);
+  leapyear = is_leapyear(year);
 
   while (tmp >= days[leapyear][month - 1]) {
 #if defined(STANDALONE) && defined(DEBUG)
@@ -152,7 +153,7 @@ void convertEpochUTC(const time_t epoch, datetime_t *datetime) {
     month++;
   }
 #if defined(STANDALONE) && defined(DEBUG)
-    printf(" year: %d, month: %d, is leap year?: %d, tmp: %ld\n", year, month, leapyear, tmp);
+  printf("year: %d, month: %d, is leap year?: %d, tmp: %ld\n", year, month, leapyear, tmp);
 #endif
   datetime->year = year;
   datetime->month = month;
@@ -160,81 +161,55 @@ void convertEpochUTC(const time_t epoch, datetime_t *datetime) {
 }
 
 unsigned int dayofweek(unsigned y, unsigned int m, unsigned int d) {
-    static int t[] = {0, 3, 2, 5, 0, 3, 5, 1, 4, 6, 2, 4};
-    if ( m < 3 )
-    {
-        y -= 1;
-    }
-    return (y + y/4 - y/100 + y/400 + t[m-1] + d) % 7;
+  static int t[] = {0, 3, 2, 5, 0, 3, 5, 1, 4, 6, 2, 4};
+  if ( m < 3 )
+  {
+    y -= 1;
+  }
+  return (y + y/4 - y/100 + y/400 + t[m-1] + d) % 7;
 }
 
-void convertToLocalTime(datetime_t *datetime) {
+void utc_to_local(datetime_t *datetime) {
   // add one hour for CET
-  addOffset(datetime);
-  if (isDayLightSavingTime(datetime)) {
+  add_offset(datetime);
+  if (is_dst(datetime)) {
     // add another hour for CEST
-    addOffset(datetime);
+    add_offset(datetime);
   }
 }
 
 #ifdef STANDALONE
-int main(void) {
-  time_t epoch = time(NULL);
-
+void test(time_t epoch, char* expected) {
+  char result[30];
   datetime_t tm;
-  convertEpochLocal(epoch, &tm);
+
+  printf("Testing timestamp %ld, expected is %s\n", epoch, expected);
+  epoch_to_local(epoch, &tm);
+  snprintf(result, 30, "%04ld-%02d-%02d (%s) %02d:%02d:%02d", tm.year, tm.month, tm.day, weekday[tm.dotw], tm.hour, tm.min, tm.sec);
+  if (strcmp(expected, result) != 0) {
+    printf("test failed, result was %s\n", result);
+  }
+  printf("\n");
+}
+
+int main(void) {
+  datetime_t tm;
+  epoch_to_local(time(NULL), &tm);
 
   printf("current: %04ld-%02d-%02d (%s) %02d:%02d:%02d\n\n", tm.year, tm.month, tm.day, weekday[tm.dotw], tm.hour, tm.min, tm.sec);
 
   // some tests
-  convertEpochLocal(0L, &tm);
-  printf("returned: %04ld-%02d-%02d (%s) %02d:%02d:%02d\n", tm.year, tm.month, tm.day, weekday[tm.dotw], tm.hour, tm.min, tm.sec);
-  printf("expected: 1970-01-01 (Thu) 01:00:00\n\n");
-
-  // some tests
-  convertEpochLocal(26179200L, &tm);
-  printf("returned: %04ld-%02d-%02d (%s) %02d:%02d:%02d\n", tm.year, tm.month, tm.day, weekday[tm.dotw], tm.hour, tm.min, tm.sec);
-  printf("expected: 1970-10-31 (Sat) 01:00:00\n\n");
-
-  convertEpochLocal(1630452461L, &tm);
-  printf("returned: %04ld-%02d-%02d (%s) %02d:%02d:%02d\n", tm.year, tm.month, tm.day, weekday[tm.dotw], tm.hour, tm.min, tm.sec);
-  printf("expected: 2021-09-01 (Wed) 01:27:41\n\n");
-
-  convertEpochLocal(1619825261L, &tm);
-  printf("returned: %04ld-%02d-%02d (%s) %02d:%02d:%02d\n", tm.year, tm.month, tm.day, weekday[tm.dotw], tm.hour, tm.min, tm.sec);
-  printf("expected: 2021-05-01 (Sat) 01:27:41\n\n");
-
-  convertEpochLocal(1614554861L, &tm);
-  printf("returned: %04ld-%02d-%02d (%s) %02d:%02d:%02d\n", tm.year, tm.month, tm.day, weekday[tm.dotw], tm.hour, tm.min, tm.sec);
-  printf("expected: 2021-03-01 (Mon) 00:27:41\n\n");
-
-  convertEpochLocal(1583018861L, &tm);
-  printf("returned: %04ld-%02d-%02d (%s) %02d:%02d:%02d\n", tm.year, tm.month, tm.day, weekday[tm.dotw], tm.hour, tm.min, tm.sec);
-  printf("expected: 2020-03-01 (Sun) 00:27:41\n\n");
-
-  convertEpochLocal(1616865701L, &tm);
-  printf("returned: %04ld-%02d-%02d (%s) %02d:%02d:%02d\n", tm.year, tm.month, tm.day, weekday[tm.dotw], tm.hour, tm.min, tm.sec);
-  printf("expected: 2021-03-27 (Sat) 18:21:41\n\n");
-
-  convertEpochLocal(1616890901L, &tm);
-  printf("returned: %04ld-%02d-%02d (%s) %02d:%02d:%02d\n", tm.year, tm.month, tm.day, weekday[tm.dotw], tm.hour, tm.min, tm.sec);
-  printf("expected: 2021-03-28 (Sun) 01:21:41\n\n");
-
-  convertEpochLocal(1616894501L, &tm);
-  printf("returned: %04ld-%02d-%02d (%s) %02d:%02d:%02d\n", tm.year, tm.month, tm.day, weekday[tm.dotw], tm.hour, tm.min, tm.sec);
-  printf("expected: 2021-03-28 (Sun) 03:21:41\n\n");
-
-  convertEpochLocal(1635646901L, &tm);
-  printf("returned: %04ld-%02d-%02d (%s) %02d:%02d:%02d\n", tm.year, tm.month, tm.day, weekday[tm.dotw], tm.hour, tm.min, tm.sec);
-  printf("expected: 2021-10-31 (Sun) 03:21:41\n\n");
-
-  convertEpochLocal(1635639701L, &tm);
-  printf("returned: %04ld-%02d-%02d (%s) %02d:%02d:%02d\n", tm.year, tm.month, tm.day, weekday[tm.dotw], tm.hour, tm.min, tm.sec);
-  printf("expected: 2021-10-31 (Sun) 02:21:41\n\n");
-
-  convertEpochLocal(1603498901L, &tm);
-  printf("returned: %04ld-%02d-%02d (%s) %02d:%02d:%02d\n", tm.year, tm.month, tm.day, weekday[tm.dotw], tm.hour, tm.min, tm.sec);
-  printf("expected: 2020-10-24 (Sat) 02:21:41\n\n");
+  test(0L,          "1970-01-01 (Thu) 01:00:00");
+  test(26179200L,   "1970-10-31 (Sat) 01:00:00");
+  test(1630452461L, "2021-09-01 (Wed) 01:27:41");
+  test(1619825261L, "2021-05-01 (Sat) 01:27:41");
+  test(1614554861L, "2021-03-01 (Mon) 00:27:41");
+  test(1583018861L, "2020-03-01 (Sun) 00:27:41");
+  test(1616865701L, "2021-03-27 (Sat) 18:21:41");
+  test(1616890901L, "2021-03-28 (Sun) 01:21:41");
+  test(1616894501L, "2021-03-28 (Sun) 03:21:41");
+  test(1635646901L, "2021-10-31 (Sun) 03:21:41");
+  test(1635639701L, "2021-10-31 (Sun) 02:21:41");
+  test(1603498901L, "2020-10-24 (Sat) 02:21:41");
 }
 #endif
-

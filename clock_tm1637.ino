@@ -103,7 +103,7 @@ void loop() {
   if (counter == 0) {
     time_t epoch = getNtpTime();
     if (epoch > 0) {
-      convertEpochUTC(epoch, &currTime);
+      epoch_to_utc(epoch, &currTime);
       if (!rtc_set_datetime(&currTime)) {
         Serial1.println("Error while setting rtc");
       }
@@ -111,7 +111,7 @@ void loop() {
   }
 
   if (rtc_get_datetime(&currTime)) {
-    convertToLocalTime(&currTime);
+    utc_to_local(&currTime);
     switch (option) {
       case 1:
         // minutes and seconds
