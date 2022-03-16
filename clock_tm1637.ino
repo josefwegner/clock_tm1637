@@ -80,7 +80,7 @@ void setup() {
   encoder = new RotaryEncoder(INPUT_CLK, INPUT_DT, RotaryEncoder::LatchMode::FOUR3);
   attachInterrupt(digitalPinToInterrupt(INPUT_CLK), checkPosition, CHANGE);
   attachInterrupt(digitalPinToInterrupt(INPUT_DT), checkPosition, CHANGE);
-  attachInterrupt(digitalPinToInterrupt(INPUT_T), doTaster, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(INPUT_T), doPress, CHANGE);
 }
 
 void loop() {
@@ -191,6 +191,6 @@ void checkPosition() {
   encoder->tick(); // just call tick() to check the state.
 }
 
-void doTaster() {
+void doPress() {
   pressed = !pressed;
 }
