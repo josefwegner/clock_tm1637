@@ -20,21 +20,11 @@
    This code is in the public domain.
  */
 
-// workaround for missing extern "C" in pico-sdk 1.0 used by
-// ArduinoCore-mbed (https://github.com/arduino/ArduinoCore-mbed/issues/300)
-#ifdef __cplusplus
-extern "C"
-{
-  void rtc_init           (void);
-  bool rtc_get_datetime(datetime_t *t);
-  bool rtc_set_datetime(datetime_t *t);
-}
-#endif
-
 const uint8_t numbers[10] = {0x3F, 0x06, 0x5B, 0x4F, 0x66, 0x6D, 0x7D, 0x07, 0x7F, 0x6F};
 const uint8_t weekdays[7][2] = {{0x2C, 0x5C}, {0x55, 0x5C}, {0x5E, 0x11}, {0x55, 0x11}, {0x5E, 0x5C}, {0x71, 0x50}, {0x2D, 0x5F}};
 
 #include <TM1637.h>
+//#include <RTClib.h>
 #include <RotaryEncoder.h>
 #include <mbed.h>
 #include "ntp.hh"
@@ -57,6 +47,8 @@ volatile boolean pressed = false;
 // Pin 2 - > CLK
 TM1637 tm1637(2, 3);
 
+//RTC_DS3231 rtc;
+
 void setup() {
   // Set encoder pins as inputs
   pinMode (INPUT_T, INPUT);
@@ -75,6 +67,7 @@ void setup() {
   Serial1.println("Init Wifi");
   wifiBegin();
   ntpBegin();
+  //rtc.begin();
 
   Serial1.println("Setting up interrupts for rotary encode");
   encoder = new RotaryEncoder(INPUT_CLK, INPUT_DT, RotaryEncoder::LatchMode::FOUR3);
@@ -103,6 +96,7 @@ void loop() {
   if (counter == 0) {
     time_t epoch = getNtpTime();
     if (epoch > 0) {
+      //rtc.adjust(DateTime(epoch));
       epoch_to_utc(epoch, &currTime);
       if (!rtc_set_datetime(&currTime)) {
         Serial1.println("Error while setting rtc");
